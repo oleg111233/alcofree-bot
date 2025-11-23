@@ -6,6 +6,8 @@ from datetime import datetime, date, timedelta
 from threading import Thread
 from flask import Flask
 
+# Библиотеки Telegram
+
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackContext
 
