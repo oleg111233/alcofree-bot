@@ -14,15 +14,21 @@ logging.basicConfig(level=logging.INFO)
 
 # ---------- КЛАВИАТУРЫ ----------
 def get_main_keyboard():
-    return ReplyKeyboardMarkup([
-        [KeyboardButton(text="Тяга сейчас"), KeyboardButton(text="Моя статистика")],
-        [KeyboardButton(text="Сорвался(ась)"), KeyboardButton(text="Настройки")]
-    ], resize_keyboard=True)
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Тяга сейчас"), KeyboardButton(text="Моя статистика")],
+            [KeyboardButton(text="Сорвался(ась)"), KeyboardButton(text="Настройки")]
+        ],
+        resize_keyboard=True
+    )
 
 def get_intro_keyboard():
-    return ReplyKeyboardMarkup([
-        [KeyboardButton(text="В путь в трезвую жизнь")]
-    ], resize_keyboard=True)
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="В путь в трезвую жизнь")]
+        ],
+        resize_keyboard=True
+    )
 
 # ---------- КОМАНДЫ БОТА ----------
 async def start(update, context):
