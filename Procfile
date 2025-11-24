@@ -1,1 +1,0 @@
-web: python alcofree_main.py
