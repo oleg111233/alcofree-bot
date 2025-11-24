@@ -132,11 +132,6 @@ def run_web_server():
 def main():
     logger.info("Starting bot initialization...")
     
-    # Проверяем токен
-    if not BOT_TOKEN or BOT_TOKEN == '8336691136:AAGo_htB8Shysi6AW0p3ZpJvyGtJb8TJF3E':
-        logger.error("BOT_TOKEN not set properly")
-        return
-    
     try:
         # Создаем приложение
         application = Application.builder().token(BOT_TOKEN).build()
