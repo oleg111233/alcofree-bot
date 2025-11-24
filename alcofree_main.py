@@ -4,7 +4,7 @@ from threading import Thread
 from flask import Flask
 
 from telegram import ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 # Конфигурация
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '8336691136:AAGo_htB8Shysi6AW0p3ZpJvyGtJb8TJF3E')
@@ -15,26 +15,26 @@ logging.basicConfig(level=logging.INFO)
 # ---------- КЛАВИАТУРЫ ----------
 def get_main_keyboard():
     return ReplyKeyboardMarkup([
-        [KeyboardButton("Тяга сейчас"), KeyboardButton("Моя статистика")],
-        [KeyboardButton("Сорвался(ась)"), KeyboardButton("Настройки")]
+        [KeyboardButton(text="Тяга сейчас"), KeyboardButton(text="Моя статистика")],
+        [KeyboardButton(text="Сорвался(ась)"), KeyboardButton(text="Настройки")]
     ], resize_keyboard=True)
 
 def get_intro_keyboard():
     return ReplyKeyboardMarkup([
-        [KeyboardButton("В путь в трезвую жизнь")]
+        [KeyboardButton(text="В путь в трезвую жизнь")]
     ], resize_keyboard=True)
 
 # ---------- КОМАНДЫ БОТА ----------
-def start(update, context):
-    update.message.reply_text(
+async def start(update, context):
+    await update.message.reply_text(
         "Привет! Я бот, который помогает работать с алкогольной тягой.\n\n"
         "⚠️ Я не врач и не заменяю лечение.\n"
         "Нажми «В путь в трезвую жизнь», чтобы начать.",
         reply_markup=get_intro_keyboard()
     )
 
-def start_journey(update, context):
-    update.message.reply_text(
+async def start_journey(update, context):
+    await update.message.reply_text(
         "Отлично! Трекер трезвости запущен. 🎉\n\n"
         "Теперь ты можешь:\n"
         "• Отслеживать дни трезвости\n"
@@ -44,7 +44,7 @@ def start_journey(update, context):
         reply_markup=get_main_keyboard()
     )
 
-def stats_command(update, context):
+async def stats_command(update, context):
     stats_text = """
 🎉 ТРЕЗВОСТЬ: 1 ДЕНЬ
 
@@ -54,10 +54,10 @@ def stats_command(update, context):
 
 Ты делаешь огромные шаги! 💪
 """
-    update.message.reply_text(stats_text)
+    await update.message.reply_text(stats_text)
 
-def craving_handler(update, context):
-    update.message.reply_text(
+async def craving_handler(update, context):
+    await update.message.reply_text(
         "🆘 ПОМОЩЬ ПРИ ТЯГЕ\n\n"
         "1. Дыши глубоко - 4 секунды вдох, 4 задержка, 6 выдох\n"
         "2. Выпей воды - стакан холодной воды\n" 
@@ -67,27 +67,27 @@ def craving_handler(update, context):
         "Тяга пройдет через 15-20 минут! Ты сильнее! 💪"
     )
 
-def relapse_handler(update, context):
-    update.message.reply_text(
+async def relapse_handler(update, context):
+    await update.message.reply_text(
         "Не осуждаю тебя 🙏\n"
         "Это не конец, а опыт. Ты справишься.\n\n"
         "Нажми «В путь в трезвую жизнь», чтобы начать заново.",
         reply_markup=get_intro_keyboard()
     )
 
-def handle_message(update, context):
+async def handle_message(update, context):
     text = update.message.text
     
     if text == "В путь в трезвую жизнь":
-        start_journey(update, context)
+        await start_journey(update, context)
     elif text == "Моя статистика":
-        stats_command(update, context)
+        await stats_command(update, context)
     elif text == "Тяга сейчас":
-        craving_handler(update, context)
+        await craving_handler(update, context)
     elif text == "Сорвался(ась)":
-        relapse_handler(update, context)
+        await relapse_handler(update, context)
     elif text == "Настройки":
-        update.message.reply_text(
+        await update.message.reply_text(
             "Настройки:\n"
             "• Трекер трезвости: активен\n"
             "• Ежедневные уведомления: включены\n"
@@ -96,7 +96,7 @@ def handle_message(update, context):
             reply_markup=get_main_keyboard()
         )
     else:
-        update.message.reply_text("Используй кнопки меню 👇", reply_markup=get_main_keyboard())
+        await update.message.reply_text("Используй кнопки меню 👇", reply_markup=get_main_keyboard())
 
 # ---------- ВЕБ-СЕРВЕР ДЛЯ RENDER ----------
 web_app = Flask(__name__)
@@ -114,16 +114,13 @@ def run_web_server():
 
 # ---------- ОСНОВНАЯ ФУНКЦИЯ ----------
 def main():
-    # Создаем updater
-    updater = Updater(BOT_TOKEN, use_context=True)
-    
-    # Получаем диспетчер для регистрации обработчиков
-    dp = updater.dispatcher
+    # Создаем приложение
+    application = Application.builder().token(BOT_TOKEN).build()
     
     # Добавляем обработчики
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("stats", stats_command))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("stats", stats_command))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     # Запускаем веб-сервер в отдельном потоке
     web_thread = Thread(target=run_web_server)
@@ -133,8 +130,7 @@ def main():
     # Запускаем бота
     print(f"🤖 Бот запущен на порту {WEB_PORT}")
     print("🌐 Веб-сервер работает")
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
