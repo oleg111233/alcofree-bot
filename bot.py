@@ -11,6 +11,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '8336691136:AAGo_htB8Shysi6AW0p3ZpJvyGtJ
 WEB_PORT = int(os.environ.get('PORT', 10000))
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ---------- КЛАВИАТУРЫ ----------
 def get_main_keyboard():
@@ -32,6 +33,7 @@ def get_intro_keyboard():
 
 # ---------- КОМАНДЫ БОТА ----------
 async def start(update, context):
+    logger.info(f"User {update.effective_user.id} started the bot")
     await update.message.reply_text(
         "Привет! Я бот, который помогает работать с алкогольной тягой.\n\n"
         "⚠️ Я не врач и не заменяю лечение.\n"
@@ -40,6 +42,7 @@ async def start(update, context):
     )
 
 async def start_journey(update, context):
+    logger.info(f"User {update.effective_user.id} started journey")
     await update.message.reply_text(
         "Отлично! Трекер трезвости запущен. 🎉\n\n"
         "Теперь ты можешь:\n"
@@ -51,6 +54,7 @@ async def start_journey(update, context):
     )
 
 async def stats_command(update, context):
+    logger.info(f"User {update.effective_user.id} requested stats")
     stats_text = """
 🎉 ТРЕЗВОСТЬ: 1 ДЕНЬ
 
@@ -63,6 +67,7 @@ async def stats_command(update, context):
     await update.message.reply_text(stats_text)
 
 async def craving_handler(update, context):
+    logger.info(f"User {update.effective_user.id} has craving")
     await update.message.reply_text(
         "🆘 ПОМОЩЬ ПРИ ТЯГЕ\n\n"
         "1. Дыши глубоко - 4 секунды вдох, 4 задержка, 6 выдох\n"
@@ -74,6 +79,7 @@ async def craving_handler(update, context):
     )
 
 async def relapse_handler(update, context):
+    logger.info(f"User {update.effective_user.id} relapsed")
     await update.message.reply_text(
         "Не осуждаю тебя 🙏\n"
         "Это не конец, а опыт. Ты справишься.\n\n"
@@ -82,7 +88,10 @@ async def relapse_handler(update, context):
     )
 
 async def handle_message(update, context):
+    user_id = update.effective_user.id
     text = update.message.text
+    
+    logger.info(f"User {user_id} sent: {text}")
     
     if text == "В путь в трезвую жизнь":
         await start_journey(update, context)
@@ -113,30 +122,43 @@ def home():
 
 @web_app.route('/health')
 def health():
-    return "OK"
+    return "OK", 200
 
 def run_web_server():
-    web_app.run(host='0.0.0.0', port=WEB_PORT)
+    logger.info(f"Starting web server on port {WEB_PORT}")
+    web_app.run(host='0.0.0.0', port=WEB_PORT, debug=False)
 
 # ---------- ОСНОВНАЯ ФУНКЦИЯ ----------
 def main():
-    # Создаем приложение
-    application = Application.builder().token(BOT_TOKEN).build()
+    logger.info("Starting bot initialization...")
     
-    # Добавляем обработчики
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("stats", stats_command))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    # Проверяем токен
+    if not BOT_TOKEN or BOT_TOKEN == '8336691136:AAGo_htB8Shysi6AW0p3ZpJvyGtJb8TJF3E':
+        logger.error("BOT_TOKEN not set properly")
+        return
     
-    # Запускаем веб-сервер в отдельном потоке
-    web_thread = Thread(target=run_web_server)
-    web_thread.daemon = True
-    web_thread.start()
-    
-    # Запускаем бота
-    print(f"🤖 Бот запущен на порту {WEB_PORT}")
-    print("🌐 Веб-сервер работает")
-    application.run_polling()
+    try:
+        # Создаем приложение
+        application = Application.builder().token(BOT_TOKEN).build()
+        
+        # Добавляем обработчики
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("stats", stats_command))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        
+        # Запускаем веб-сервер в отдельном потоке
+        web_thread = Thread(target=run_web_server)
+        web_thread.daemon = True
+        web_thread.start()
+        
+        # Запускаем бота
+        logger.info(f"🤖 Bot started successfully on port {WEB_PORT}")
+        logger.info("🌐 Web server is running")
+        application.run_polling()
+        
+    except Exception as e:
+        logger.error(f"Failed to start bot: {e}")
+        raise
 
 if __name__ == "__main__":
     main()
