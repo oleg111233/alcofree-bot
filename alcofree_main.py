@@ -105,6 +105,10 @@ web_app = Flask(__name__)
 def home():
     return "🤖 Бот трезвости работает! Открой Telegram и напиши /start"
 
+@web_app.route('/health')
+def health():
+    return "OK"
+
 def run_web_server():
     web_app.run(host='0.0.0.0', port=WEB_PORT)
 
